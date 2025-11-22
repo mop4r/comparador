@@ -16,7 +16,7 @@ Requisitos:
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-import os, time, pdfkit, requests
+import os, sys, time, pdfkit, requests, platform
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -25,6 +25,41 @@ from urllib.parse import urlparse, urljoin
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+
+# ============================================================
+# 🔹 CONFIGURAÇÕES
+# ============================================================
+
+class Config:
+    """Configurações centralizadas da aplicação"""
+    
+    # URL padrão para o campo de entrada
+    DEFAULT_URL = "https://desk.animati.com.br/agent/animati/support-team/base-de-conhecimento/page#Solutions"
+    
+    # Domínio Zoho Desk (pode ser customizado)
+    ZOHO_DESK_DOMAIN = "desk.animati.com.br"
+    
+    @staticmethod
+    def get_wkhtmltopdf_path():
+        """Retorna o caminho do wkhtmltopdf baseado no sistema operacional"""
+        system = platform.system()
+        
+        if system == "Windows":
+            return r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
+        elif system == "Linux":
+            # Tenta encontrar no PATH ou localizações comuns
+            common_paths = [
+                "/usr/bin/wkhtmltopdf",
+                "/usr/local/bin/wkhtmltopdf"
+            ]
+            for path in common_paths:
+                if os.path.exists(path):
+                    return path
+            return "wkhtmltopdf"  # Assume que está no PATH
+        elif system == "Darwin":  # macOS
+            return "/usr/local/bin/wkhtmltopdf"
+        else:
+            return "wkhtmltopdf"  # Default - assume no PATH
 
 # ============================================================
 # 🔹 GITLAB WIKI
@@ -218,7 +253,7 @@ def coletar_conteudo_zohodesk(root_url, pasta_saida, delay=2, debug=False):
         href = a["href"].strip()
         if "#Solutions/dv/" in href:
             if href.startswith("/"):
-                href = "https://desk.animati.com.br" + href
+                href = f"https://{Config.ZOHO_DESK_DOMAIN}" + href
             links.add(href)
 
     print(f"✅ {len(links)} artigos detectados.\n")
@@ -317,7 +352,7 @@ def coletar_conteudo_zohodesk(root_url, pasta_saida, delay=2, debug=False):
         f.write("\n".join(html_final))
 
     pdf_path = os.path.join(pasta_saida, "ZohoDesk_BaseConhecimento.pdf")
-    config = pdfkit.configuration(wkhtmltopdf=r"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe")
+    config = pdfkit.configuration(wkhtmltopdf=Config.get_wkhtmltopdf_path())
 
     pdfkit.from_file(temp_html, pdf_path, options={
         "enable-local-file-access": "",
@@ -362,7 +397,7 @@ def gerar_pdf(titulo, pasta_saida, toc_entries, html_parts):
         "zoom": "1.1",
         "quiet": ""
     }
-    config = pdfkit.configuration(wkhtmltopdf=r"C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe")
+    config = pdfkit.configuration(wkhtmltopdf=Config.get_wkhtmltopdf_path())
     pdfkit.from_file(temp_html, pdf_path, options=options, configuration=config)
     os.remove(temp_html)
     return pdf_path, len(toc_entries)
@@ -373,7 +408,7 @@ def gerar_pdf(titulo, pasta_saida, toc_entries, html_parts):
 # ============================================================
 
 def coletar_e_gerar_pdf(root_url, pasta_saida):
-    if "desk.animati.com.br" in root_url:
+    if Config.ZOHO_DESK_DOMAIN in root_url:
         return coletar_conteudo_zohodesk(root_url, pasta_saida)
     elif "/-/wikis/" in root_url:
         return coletar_conteudo_gitlab(root_url, pasta_saida)
@@ -529,7 +564,7 @@ entry_url = ttk.Entry(url_frame,
                      style='Dark.TEntry',
                      font=('Segoe UI', 10))
 entry_url.pack(fill="x", ipady=8)
-entry_url.insert(0, "https://desk.animati.com.br/agent/animati/support-team/base-de-conhecimento/page#Solutions")
+entry_url.insert(0, Config.DEFAULT_URL)
 
 # Espaçamento
 spacer1 = ttk.Frame(main_frame, style='Dark.TFrame', height=30)

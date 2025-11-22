@@ -8,6 +8,14 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
 # ============================================================
+# 🔹 CONFIGURAÇÕES
+# ============================================================
+
+class Config:
+    """Configurações centralizadas da aplicação"""
+    DEFAULT_URL = "https://desk.animati.com.br/agent/animati/support-team/base-de-conhecimento/page#Solutions"
+
+# ============================================================
 # 🔹 INTERFACE MODERNA COM MODO NOTURNO
 # ============================================================
 
@@ -151,7 +159,7 @@ entry_url = ttk.Entry(url_frame,
                      style='Dark.TEntry',
                      font=('Segoe UI', 10))
 entry_url.pack(fill="x", ipady=8)
-entry_url.insert(0, "https://desk.animati.com.br/agent/animati/support-team/base-de-conhecimento/page#Solutions")
+entry_url.insert(0, Config.DEFAULT_URL)
 
 # Espaçamento
 spacer1 = ttk.Frame(main_frame, style='Dark.TFrame', height=30)
